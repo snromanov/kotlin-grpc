@@ -1,14 +1,47 @@
+#Eclipse
+.recommenders/
+.metadata/
+.classpath
+.project
+.pydevproject
+.settings/
+bin/
+
+#IntelliJ IDEA
+.idea
+*.iws
+*.iml
+*.ipr
+
+#NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Build files
+build
+.allure
+gradlew
+gradlew.bat
 .gradle
-/build/
+**/target/
+**/build/
+**/out/
+**/allure-results/
 
-# Ignore Gradle GUI config
-gradle-app.setting
+#macOS
+.DS_Store
 
-# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
-!gradle-wrapper.jar
+#Unix
+nohup.out
 
-# Cache of project
-.gradletasknamecache
+### VS Code ###
+.vscode/
 
-# # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
-# gradle/wrapper/gradle-wrapper.properties
+.gradle/
+build/
+
+!/proto/src/main/proto/
+/proto/src/main/
