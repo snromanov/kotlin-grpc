@@ -1,0 +1,55 @@
+syntax = "proto3";
+option java_multiple_files = true;
+
+package org.romanov;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service PetShopService {
+  // Creates a new pet.
+  rpc CreatePet(PetRequest) returns (PetResponse){}
+  // Gets a pet by its ID.
+  rpc GetPetById(PetRequestById) returns (PetResponse) {}
+  // Gets all pets.
+  rpc GetPets(google.protobuf.Empty) returns (GetPetsResponse) {}
+}
+
+message PetId {
+  uint32 id = 1;
+}
+
+message PetRequest{
+  PetId id = 1;
+  PetType type = 2;
+  optional string name = 3;
+  optional Gender gender = 4;
+}
+
+message PetRequestById{
+  PetId id = 1;
+}
+
+message PetResponse {
+  PetId id = 1;
+  PetType type = 2;
+  optional string name = 3;
+  optional Gender gender = 4;
+}
+
+message GetPetsResponse {
+  repeated PetResponse pets = 1;
+}
+
+enum Gender{
+  FEMALE = 0;
+  MALE = 1;
+}
+
+enum PetType {
+  DOG = 0;
+  CAT = 1;
+  BIRD = 2;
+  Other = 3;
+  // Add more as needed
+}
