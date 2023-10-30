@@ -8,7 +8,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeSingleton
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 
 class PetShopServiceTest : ShouldSpec({
@@ -50,48 +49,42 @@ class PetShopServiceTest : ShouldSpec({
 
     context("PetShopService") {
         should("create a pet") {
-            runBlocking {
-                assertSoftly {
-                    petResponse.id shouldBe petData.id
-                    petResponse.type shouldBe petData.type
-                    petResponse.name shouldBe petData.name
-                    petResponse.gender shouldBe petData.gender
-                }
+            assertSoftly {
+                petResponse.id shouldBe petData.id
+                petResponse.type shouldBe petData.type
+                petResponse.name shouldBe petData.name
+                petResponse.gender shouldBe petData.gender
             }
         }
 
         should("get a pet by id") {
-            runBlocking {
-                val petRequestById = petRequestById {
-                        id = petData.id
-                    }
-                    .apply { log.info { "PetRequestById: $this" } }
-                val response = stub
-                    .getPetById(petRequestById)
-                    .apply { log.info { "PetResponse: $this" } }
-
-                response.id shouldBe petRequestById.id
+            val petRequestById = petRequestById {
+                id = petData.id
             }
+                .apply { log.info { "PetRequestById: $this" } }
+            val response = stub
+                .getPetById(petRequestById)
+                .apply { log.info { "PetResponse: $this" } }
+
+            response.id shouldBe petRequestById.id
         }
 
         should("get all pets") {
-            runBlocking {
-                val petsResponse = stub
-                    .getPets(empty { })
-                    .apply { log.info { "GetPetsResponse: $this" } }
+            val petsResponse = stub
+                .getPets(empty { })
+                .apply { log.info { "GetPetsResponse: $this" } }
 
-                petsResponse
-                    .petsList
-                    .shouldBeSingleton()
-                    .first()
-                    .apply {
-                        id shouldBe petData.id
-                        type shouldBe petData.type
-                        name shouldBe petData.name
-                        gender shouldBe petData.gender
-                    }
+            petsResponse
+                .petsList
+                .shouldBeSingleton()
+                .first()
+                .apply {
+                    id shouldBe petData.id
+                    type shouldBe petData.type
+                    name shouldBe petData.name
+                    gender shouldBe petData.gender
 
-            }
+                }
         }
     }
 })
