@@ -3,52 +3,99 @@ package org.romanov
 import com.google.protobuf.Empty
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
+import mu.KotlinLogging
 
-/**
- * Implementation of the PetShopService gRPC service.
- *
- * This class manages a list of pets and provides methods to create a pet,
- * get a pet by its ID, and get all pets.
- */
 class PetShopServiceImpl : PetShopServiceGrpcKt.PetShopServiceCoroutineImplBase() {
     private val listOfPets = mutableListOf<PetResponse>()
+    private val logger = KotlinLogging.logger {}
 
     /**
-     * Creates a pet and adds it to the list of pets.
-     *
-     * @param request The request containing the details of the pet to be created.
-     * @return The created pet.
+     * Creates a new pet in the store.  Duplicate pets are allowed, but
+     * updates to existing pets will be ignored.
      */
     override suspend fun createPet(request: PetRequest): PetResponse {
+        validatePetRequest(request)
+
         val pet = petResponse {
             id = request.id
             type = request.type
             name = request.name
             gender = request.gender
         }
-        listOfPets.add(pet)
+
+        synchronized(listOfPets) {
+            if (listOfPets.any { it.id == request.id }) {
+                throw StatusRuntimeException(
+                    Status.ALREADY_EXISTS
+                        .withDescription("Pet with ID ${request.id} already exists")
+                )
+            }
+            listOfPets.add(pet)
+        }
+
+        logger.info { "Created new pet: $pet" }
         return pet
     }
 
     /**
-     * Gets a pet by its ID.
-     *
-     * @param request The request containing the ID of the pet to be retrieved.
-     * @return The pet with the given ID.
-     * @throws StatusRuntimeException if no pet with the given ID is found.
+     * Returns the pet with the given ID. Returns NOT_FOUND if the pet does not exist.
      */
     override suspend fun getPetById(request: PetRequestById): PetResponse {
-        return listOfPets.find { it.id == request.id } ?: throw StatusRuntimeException(Status.NOT_FOUND)
+        validatePetId(request.id)
+
+        return listOfPets.find { it.id == request.id }
+            ?: throw StatusRuntimeException(
+                Status.NOT_FOUND
+                    .withDescription("Pet with ID ${request.id.id} not found")
+            )
+    }
+
+    /** get all pets */
+    override suspend fun getPets(request: Empty): GetPetsResponse {
+        return getPetsResponse {
+            synchronized(listOfPets) {
+                this.pets.addAll(listOfPets)
+            }
+        }.also {
+            logger.debug { "Returning ${it.petsCount} pets" }
+        }
     }
 
     /**
-     * Gets all pets.
-     *
-     * @param request The request to get all pets.
-     * @return A response containing all pets.
+     * Verifies that the pet is valid and can be created.
      */
-    override suspend fun getPets(request: Empty): GetPetsResponse =
-        getPetsResponse {
-            this.pets.addAll(listOfPets)
+    private fun validatePetRequest(request: PetRequest) {
+        val validationError = when {
+            request.name.isBlank() -> "Pet name cannot be empty"
+            request.type == PetType.UNRECOGNIZED -> "Invalid pet type"
+            request.gender == Gender.UNRECOGNIZED -> "Invalid gender"
+            else -> null
         }
+
+        if (validationError != null) {
+            throw StatusRuntimeException(
+                Status.INVALID_ARGUMENT.withDescription(validationError)
+            )
+        }
+    }
+
+    /**
+     * Verifies that the pet ID is valid.
+     */
+    private fun validatePetId(id: PetId) {
+        if (id.id <= 0) {
+            throw StatusRuntimeException(
+                Status.INVALID_ARGUMENT.withDescription("Pet ID must be positive")
+            )
+        }
+    }
+
+    /**
+     *
+     */
+    fun clearPets() {
+        synchronized(listOfPets) {
+            listOfPets.clear()
+        }
+    }
 }
